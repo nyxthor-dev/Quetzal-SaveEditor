@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quetzal Save Editor — Pokémon Quetzal Alpha 9</title>
+<meta name="description" content="Editor de equipos y .sav para Pokémon Quetzal Alpha 9. 100% local: tu archivo nunca sale del navegador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CradialGradient id='a' cx='35%25' cy='30%25' r='80%25'%3E%3Cstop offset='0' stop-color='%23ff7b7b'/%3E%3Cstop offset='.55' stop-color='%23e63946'/%3E%3Cstop offset='1' stop-color='%23a51e2b'/%3E%3C/radialGradient%3E%3CradialGradient id='b' cx='35%25' cy='70%25' r='80%25'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.7' stop-color='%23e8ecf2'/%3E%3Cstop offset='1' stop-color='%23bfC9d6'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='45' fill='url(%23b)'/%3E%3Cpath d='M5 50a45 45 0 0 1 90 0z' fill='url(%23a)'/%3E%3Cellipse cx='34' cy='26' rx='14' ry='8' fill='rgba(255,255,255,.5)' transform='rotate(-24 34 26)'/%3E%3Ccircle cx='50' cy='50' r='45' fill='none' stroke='%232d3748' stroke-width='7'/%3E%3Crect x='5' y='46.5' width='90' height='7' fill='%232d3748'/%3E%3Ccircle cx='50' cy='50' r='17' fill='%232d3748'/%3E%3Ccircle cx='50' cy='50' r='12' fill='%23fff'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%232d3748' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='4.5' fill='%23d7dde7'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- fondo animado (solo Home) -->
+<div class="fall-bg" id="fall-bg" aria-hidden="true"></div>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="navbar">
+  <a class="brand" href="#/home" data-nav="home" aria-label="Inicio">
+    <svg class="pokeball" viewBox="0 0 100 100" width="30" height="30" aria-hidden="true">
+      <defs>
+        <radialGradient id="pb-top" cx="35%" cy="30%" r="80%">
+          <stop offset="0%" stop-color="#ff7b7b"/><stop offset="55%" stop-color="#e63946"/><stop offset="100%" stop-color="#a51e2b"/>
+        </radialGradient>
+        <radialGradient id="pb-bot" cx="35%" cy="70%" r="80%">
+          <stop offset="0%" stop-color="#ffffff"/><stop offset="70%" stop-color="#e8ecf2"/><stop offset="100%" stop-color="#bfc9d6"/>
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="50" r="45" fill="url(#pb-bot)"/>
+      <path d="M5 50a45 45 0 0 1 90 0z" fill="url(#pb-top)"/>
+      <ellipse cx="34" cy="26" rx="14" ry="8" fill="rgba(255,255,255,.5)" transform="rotate(-24 34 26)"/>
+      <circle cx="50" cy="50" r="45" fill="none" stroke="#2d3748" stroke-width="7"/>
+      <rect x="5" y="46.5" width="90" height="7" fill="#2d3748"/>
+      <circle cx="50" cy="50" r="17" fill="#2d3748"/>
+      <circle cx="50" cy="50" r="12" fill="#fff"/>
+      <circle cx="50" cy="50" r="12" fill="none" stroke="#2d3748" stroke-width="4"/>
+      <circle cx="50" cy="50" r="4.5" fill="#d7dde7"/>
+    </svg>
+    <span class="brand-name">Quetzal <b>Editor</b></span>
+  </a>
+
+  <div class="nav-links" role="navigation">
+    <a href="#/home" data-nav="home">Inicio</a>
+    <a href="#/entrenador" data-nav="entrenador">Entrenador</a>
+    <a href="#/equipo" data-nav="equipo">Equipo</a>
+    <a href="#/pc" data-nav="pc">PC Boxes</a>
+  </div>
+
+  <div class="nav-actions">
+    <span class="save-dot" id="nav-status" title="Sin archivo cargado"></span>
+    <button class="icon-btn" id="btn-theme" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+    <button class="icon-btn burger" id="btn-burger" aria-label="Abrir menú" aria-expanded="false">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- menú móvil lateral derecho -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<aside class="drawer" id="drawer" aria-label="Menú">
+  <div class="drawer-head">
+    <span class="brand-name">Menú</span>
+    <button class="icon-btn" id="btn-close-drawer" aria-label="Cerrar menú">✕</button>
+  </div>
+  <a href="#/home" data-nav="home">🏠 Inicio</a>
+  <a href="#/entrenador" data-nav="entrenador">👤 Entrenador</a>
+  <a href="#/equipo" data-nav="equipo">⚔️ Equipo</a>
+  <a href="#/pc" data-nav="pc">💻 PC Boxes</a>
+</aside>
+
+<!-- toast -->
+<div class="toast" id="toast" role="status"></div>
+
+<!-- ============ HOME ============ -->
+<main class="page" id="page-home">
+  <section class="hero card">
+    <h1>Editor de <em>equipos</em> para<br>Pokémon <span class="hl">Quetzal</span></h1>
+    <p class="lead">Carga tu archivo <code>.sav</code> (Alpha 9) y edita tu equipo, dinero y medallas.
+    Todo ocurre <strong>en tu navegador</strong>: el archivo no se sube a ningún servidor y la
+    exportación crea una copia nueva con los checksums recalculados.</p>
+
+    <div class="upload" id="drop-zone">
+      <input type="file" id="file-input" accept=".sav" hidden>
+      <svg viewBox="0 0 24 24" width="34" height="34" class="upload-ico"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 20h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <p><strong>Arrastra tu .sav aquí</strong><br>o</p>
+      <button class="btn btn-primary" id="btn-browse">Elegir archivo</button>
+      <span class="file-hint" id="file-hint">128 KiB · también acepta archivos con bytes extra del emulador</span>
+    </div>
+
+    <div id="home-status"></div>
+
+    <div class="home-shortcuts d-none" id="home-shortcuts">
+      <a class="btn btn-outline" href="#/entrenador">Ver entrenador</a>
+      <a class="btn btn-outline" href="#/equipo">Ver equipo</a>
+      <a class="btn btn-outline" href="#/pc">Ver PC</a>
+    </div>
+
+    <details class="fine-print">
+      <summary>Cómo funciona (transparencia técnica)</summary>
+      <p>Lee las 16 secciones del slot activo (firma 0x08012025), identifica cada sección por su ID
+      en 0xFF4 — nunca por posición física — y valida el checksum de cada una (suma u32 LE plegada
+      a 16 bits). El PC se muestra en solo lectura mientras su formato esté ambiguo (38 vs 31 bytes).
+      Al exportar se recomponen las secciones editadas, se recalcula su checksum y se descarga
+      <code>&lt;nombre&gt;_editado.sav</code>; el original nunca se toca. Los nombres de objetos y
+      movimientos se muestran en español; los sprites de Pokémon provienen de PokeAPI.</p>
+    </details>
+  </section>
+</main>
+
+<!-- ============ ENTRENADOR ============ -->
+<main class="page" id="page-entrenador" hidden>
+  <header class="page-head">
+    <h1>Entrenador</h1>
+    <button class="btn btn-primary" id="btn-export" disabled>💾 Exportar .sav editado</button>
+  </header>
+
+  <section class="card" id="trainer-card">
+    <div class="empty-note">Carga un archivo .sav en Inicio para ver los datos.</div>
+  </section>
+</main>
+
+<!-- ============ EQUIPO ============ -->
+<main class="page" id="page-equipo" hidden>
+  <header class="page-head">
+    <h1>Equipo <span class="count-pill" id="party-count">0/6</span></h1>
+    <button class="btn btn-outline" id="btn-add" disabled>➕ Añadir Pokémon</button>
+  </header>
+
+  <div class="party-grid" id="party-grid">
+    <div class="empty-note">Carga un archivo .sav en Inicio para ver tu equipo.</div>
+  </div>
+
+  <p class="page-footnote">Toca una tarjeta para editar. Los PP no se editan: al asignar un movimiento
+  se escriben sus PP base automáticamente. Las ediciones se aplican al exportar.</p>
+</main>
+
+<!-- ============ PC ============ -->
+<main class="page" id="page-pc" hidden>
+  <header class="page-head">
+    <h1>PC Boxes</h1>
+    <div class="head-tools">
+      <select class="select" id="pc-box-sel" aria-label="Caja"></select>
+      <span class="badge-warn" id="pc-badge">Solo lectura</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="pc-grid" id="pc-grid">
+      <div class="empty-note">Carga un archivo .sav en Inicio para ver el PC.</div>
+    </div>
+    <p class="pc-meta" id="pc-meta"></p>
+  </section>
+
+  <p class="page-footnote">El PC está en solo lectura: el formato de sus registros es ambiguo en los
+  saves reales (38 vs 31 bytes por registro) y escribir con el supuesto equivocado corrompería las
+  cajas (doc/02 §7). Se muestra la interpretación más probable.</p>
+</main>
+
+<!-- ============ MODAL DE EDICIÓN ============ -->
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <div class="modal-card">
+    <header class="modal-head">
+      <div class="modal-id">
+        <div class="sprite-wrap" id="m-sprite-wrap">
+          <img id="m-sprite" alt="Sprite del Pokémon">
+        </div>
+        <div>
+          <h2 id="m-title">—</h2>
+          <div class="type-row" id="m-types"></div>
+        </div>
+      </div>
+      <button class="icon-btn" id="m-close" aria-label="Cerrar">✕</button>
+    </header>
+
+    <div class="modal-body">
+      <section class="m-section">
+        <h3>Identidad</h3>
+        <div class="form-grid">
+          <div class="field">
+            <span>Especie</span>
+            <button class="pick-btn" id="f-species-btn" type="button"></button>
+          </div>
+          <label class="field"><span>Apodo <small>(máx. 10)</small></span><input class="input" id="f-nickname" maxlength="10"></label>
+          <label class="field"><span>Nivel</span><input class="input" id="f-level" type="number" min="1" max="100"></label>
+          <label class="field"><span>Género</span><select class="select" id="f-gender"></select></label>
+          <label class="field"><span>Naturaleza</span><select class="select" id="f-nature"></select></label>
+          <label class="field"><span>Habilidad</span><select class="select" id="f-ability"></select></label>
+          <div class="field">
+            <span>Objeto</span>
+            <button class="pick-btn" id="f-item-btn" type="button"></button>
+          </div>
+          <label class="field"><span>Poké Ball</span><select class="select" id="f-ball"></select></label>
+          <label class="field"><span>Amistad</span><input class="input" id="f-friendship" type="number" min="0" max="255"></label>
+          <label class="field check-field"><span>Shiny</span><input type="checkbox" id="f-shiny"></label>
+        </div>
+      </section>
+
+      <section class="m-section">
+        <h3>Experiencia</h3>
+        <div class="exp-block">
+          <div class="exp-top"><span id="exp-label">Nv. 1</span><span class="exp-pct" id="exp-pct">1% de 100</span></div>
+          <div class="exp-bar" role="progressbar" aria-label="Nivel respecto a 100">
+            <div class="exp-fill" id="exp-fill"></div>
+            <span class="exp-mark" style="left:25%"></span><span class="exp-mark" style="left:50%"></span><span class="exp-mark" style="left:75%"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="m-section">
+        <h3>Estadísticas</h3>
+        <div class="stats-wrap">
+          <div class="table-scroll">
+            <table class="stats-table" id="stats-table">
+              <thead><tr><th></th><th>HP</th><th>Ataque</th><th>Defensa</th><th>Velocidad</th><th>At. Esp.</th><th>Def. Esp.</th></tr></thead>
+              <tbody>
+                <tr class="row-base"><td>Base</td><td colspan="6">—</td></tr>
+                <tr class="row-iv"><td>IVs <small>(0-31)</small></td></tr>
+                <tr class="row-ev"><td>EVs <small>(0-252)</small></td></tr>
+                <tr class="row-calc"><td>Calculados</td><td colspan="6">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="radar-wrap">
+            <svg id="radar" viewBox="0 0 220 196" width="100%" aria-label="Radar de estadísticas"></svg>
+            <div class="ev-total" id="ev-total">Σ EVs: 0/510</div>
+          </div>
+        </div>
+        <p class="hint" id="ev-hint">Límites: IVs 0-31 · EVs 0-252 por stat · suma de EVs ≤ 510.
+        Al cambiar especie/nivel/IVs/EVs/naturaleza se recalculan los stats (Gen 3+) y el HP
+        actual se restablece al máximo.</p>
+      </section>
+
+      <section class="m-section">
+        <h3>Movimientos <span class="h3-note">PP automáticos, no se editan</span></h3>
+        <div class="moves-grid" id="f-moves"></div>
+        <p class="hint" id="moves-hint">Toca un movimiento para abrir el buscador: por defecto se
+        lista lo que la especie aprende (nivel, «Evo.» = al evolucionar y tutor NOVO MOV.);
+        al escribir se buscan los 848 movimientos del juego.</p>
+      </section>
+    </div>
+
+    <footer class="modal-foot">
+      <button class="btn btn-danger-ghost" id="m-delete">🗑 Eliminar</button>
+      <div class="foot-right">
+        <button class="btn btn-outline" id="m-box" disabled title="El PC es de solo lectura (formato ambiguo, doc/02 §7)">📦 Enviar a Caja</button>
+        <button class="btn btn-primary" id="m-save">✔ Guardar</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ PICKER (ventana de búsqueda genérica) ============ -->
+<div class="pick" id="pick" role="dialog" aria-modal="true" aria-labelledby="pick-title">
+  <div class="pick-card">
+    <header class="pick-head">
+      <h3 id="pick-title">Elegir</h3>
+      <button class="icon-btn" id="pick-close" aria-label="Cerrar">✕</button>
+    </header>
+    <div class="pick-search">
+      <svg viewBox="0 0 24 24" width="17" height="17" class="pick-ico"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input class="input" id="pick-input" placeholder="Buscar por nombre o número…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="pick-body" id="pick-body"></div>
+    <footer class="pick-foot" id="pick-foot"></footer>
+  </div>
+</div>
+
+<footer class="app-foot">
+  Prototipo fase 2 · corpus <code>quetzal-autopsia</code> · sprites: PokeAPI · Tera/Dynamax/modo de juego: no localizados → nunca se tocan
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/names_es.js"></script>
+<script src="js/learnsets.js"></script>
+<script src="js/sav.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>
