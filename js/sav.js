@@ -230,7 +230,7 @@ class QuetzalSave {
     const pc = this.pcBuffer();
     const candidates = [];
     for (const fmt of QZS.PC_FORMATS) {
-      let ok = 0, used = 0;
+      let ok = 0, used = 0, score = 0;
       for (let s = 0; s < fmt.boxes * QZS.BOX_SLOTS; s++) {
         const off = QZS.PC_RECORDS_OFFSET + s * fmt.size;
         let empty = true;
@@ -243,10 +243,19 @@ class QuetzalSave {
         let mvOk = true;
         for (let m = 0; m < 4; m++) if (qzGetBits(pc, off * 8 + 48 + m * 10, 10) > 848) mvOk = false;
         if (sp >= 1 && sp <= 1528 && nat <= 24 && ab <= 2 && mvOk) ok++;
+        // desempate: en el formato de 38 B el campo apodo (bytes 28..37) debe
+        // decodificar como texto charmap válido terminado en 0xFF y los PP
+        // (bytes 24..27) ser valores pequeños. Bajo un formato más corto, esa
+        // misma zona son datos basura y casi nunca pasa el filtro.
+        score += qzNickScore(pc, off, fmt.size);
       }
-      if (used && ok === used) candidates.push(fmt);
+      if (used && ok === used) candidates.push({ fmt, score });
     }
-    return { candidates, ambiguous: candidates.length !== 1, format: candidates[0] || null };
+    if (!candidates.length) return { candidates: [], ambiguous: true, format: null };
+    candidates.sort((a, b) => b.score - a.score);
+    // ambiguo solo si el 2º candidato empatan por puntuación (mismo peso de evidencia)
+    const ambiguous = candidates.length > 1 && candidates[1].score === candidates[0].score;
+    return { candidates: candidates.map(c => c.fmt), ambiguous, format: candidates[0].fmt };
   }
 
   parsePcRecord(pc, off, size, box, pos) {
@@ -264,6 +273,7 @@ class QuetzalSave {
       female: !!qzGetBits(rec, 160, 1),
       nature: qzGetBits(rec, 161, 5),
       abilityNum: qzGetBits(rec, 166, 2),
+      flags: qzGetBits(rec, 154, 6), // bits aún no documentados entre IVs y género: se conservan al reescribir
       hpCur: size === 38 ? qzGetBits(rec, 168, 16) : null,
       pp: size === 38 ? [rec[24], rec[25], rec[26], rec[27]] : null,
       nickname: size === 38 ? qzDecodeText(rec, 28, 10) : (size === 31 ? qzDecodeText(rec, 21, 10) : ''),
@@ -304,6 +314,16 @@ class QuetzalSave {
     return buf;
   }
 
+  writePcBuffer(pc) { // pc: Uint8Array(PC_CHUNK*11) mutado → recompone secciones 5..15 y sus checksums
+    if (pc.length !== QZS.PC_CHUNK * QZS.PC_SECTIONS.length) throw new Error('buffer PC de tamaño inesperado');
+    QZS.PC_SECTIONS.forEach((sid, i) => {
+      // se conservan los bytes 0xF80..0xFF3 originales de cada sección (cuentan para el checksum)
+      const buf = this.buildSectionData(sid);
+      buf.set(pc.subarray(i * QZS.PC_CHUNK, (i + 1) * QZS.PC_CHUNK), 0);
+      this.writeSection(sid, buf);
+    });
+  }
+
   downloadBlob() { // Uint8Array completo (incluye los 16 B residuales si el original los tenía)
     return this.raw;
   }
@@ -342,7 +362,54 @@ function qzIsFemale(pidLow, genderByte) {
   return pidLow < genderByte;
 }
 
+/* puntuación de plausibilidad del apodo (38B: bytes 28..37; 31B: 21..30).
+   1 si hay ≥3 letras/dígitos charmap válidos seguidos de 0xFF dentro del campo. */
+function qzNickScore(pc, off, size) {
+  const nickOff = size === 38 ? 28 : size === 31 ? 21 : -1;
+  if (nickOff < 0) return 0;
+  let letters = 0;
+  for (let i = 0; i < 10; i++) {
+    const c = pc[off + nickOff + i];
+    if (c === 0xFF) return letters >= 3 ? 1 : 0;
+    const valid = (c >= 0xBB && c <= 0xEE) || (c >= 0xA1 && c <= 0xB9) || c === 0x00;
+    if (!valid) return 0;
+    if (c !== 0x00) letters++;
+  }
+  return 0; // sin terminador: sospechoso
+}
+
 function qzSpeciesBase(speciesId) { // [hp,atk,def,spe,spa,spd] o null
   const sp = QZ.species[speciesId - 1];
   return sp ? [sp[3], sp[4], sp[5], sp[6], sp[7], sp[8]] : null;
+}
+
+/* ---------- codificación de registros PC (espejo de parsePcRecord) ----------
+   o = { species, item, exp, ball, shiny, moves[4], evs[6], ivs[6], female,
+         nature, abilityNum, hpCur, pp[4], nickname } · size = 38|31|21 bytes.
+   Layout de bits (LSB-first, validado contra doc/02 y detección de formato):
+   especie@0(11) objeto@11(10) exp/10@21(17) ball@38(6) shiny@44 movs@48(4×10)
+   EVs/4@88(6×6) IVs@124(5×6) hembra@160 naturaleza@161(5) habilidad@166(2)
+   38B: HP@168(16) + PP en bytes 24-27 + apodo@28(10) · 31B: apodo@21(10) */
+function qzEncodePcRecord(o, size) {
+  const rec = new Uint8Array(size);
+  qzSetBits(rec, 0, 11, o.species & 0x7FF);
+  qzSetBits(rec, 11, 10, (o.item || 0) & 0x3FF);
+  qzSetBits(rec, 21, 17, Math.min(0x1FFFF, Math.floor((o.exp || 0) / 10)));
+  qzSetBits(rec, 38, 6, (o.ball || 0) & 0x3F);
+  qzSetBits(rec, 44, 1, o.shiny ? 1 : 0);
+  [0, 1, 2, 3].forEach(m => qzSetBits(rec, 48 + m * 10, 10, (o.moves[m] || 0) & 0x3FF));
+  o.evs.forEach((v, e) => qzSetBits(rec, 88 + e * 6, 6, Math.min(63, Math.floor((v || 0) / 4))));
+  o.ivs.forEach((v, i) => qzSetBits(rec, 124 + i * 5, 5, (v || 0) & 31));
+  qzSetBits(rec, 154, 6, (o.flags || 0) & 63); // bits no documentados: conservar el valor original
+  qzSetBits(rec, 160, 1, o.female ? 1 : 0);
+  qzSetBits(rec, 161, 5, (o.nature || 0) & 31);
+  qzSetBits(rec, 166, 2, (o.abilityNum || 0) & 3);
+  if (size === 38) {
+    qzSetBits(rec, 168, 16, Math.min(65535, o.hpCur || 0));
+    [0, 1, 2, 3].forEach(k => { rec[24 + k] = (o.pp && o.pp[k]) || 0; });
+    rec.set(qzEncodeText((o.nickname || '').slice(0, 10), 10), 28);
+  } else if (size === 31) {
+    rec.set(qzEncodeText((o.nickname || '').slice(0, 10), 10), 21);
+  }
+  return rec;
 }
