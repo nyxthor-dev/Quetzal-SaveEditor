@@ -2,41 +2,25 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+<meta name="theme-color" content="#fffdf5">
 <title>Quetzal Save Editor — Pokémon Quetzal Alpha 9</title>
 <meta name="description" content="Editor de equipos y .sav para Pokémon Quetzal Alpha 9. 100% local: tu archivo nunca sale del navegador.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3CradialGradient id='a' cx='35%25' cy='30%25' r='80%25'%3E%3Cstop offset='0' stop-color='%23ff7b7b'/%3E%3Cstop offset='.55' stop-color='%23e63946'/%3E%3Cstop offset='1' stop-color='%23a51e2b'/%3E%3C/radialGradient%3E%3CradialGradient id='b' cx='35%25' cy='70%25' r='80%25'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.7' stop-color='%23e8ecf2'/%3E%3Cstop offset='1' stop-color='%23bfC9d6'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='45' fill='url(%23b)'/%3E%3Cpath d='M5 50a45 45 0 0 1 90 0z' fill='url(%23a)'/%3E%3Cellipse cx='34' cy='26' rx='14' ry='8' fill='rgba(255,255,255,.5)' transform='rotate(-24 34 26)'/%3E%3Ccircle cx='50' cy='50' r='45' fill='none' stroke='%232d3748' stroke-width='7'/%3E%3Crect x='5' y='46.5' width='90' height='7' fill='%232d3748'/%3E%3Ccircle cx='50' cy='50' r='17' fill='%232d3748'/%3E%3Ccircle cx='50' cy='50' r='12' fill='%23fff'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%232d3748' stroke-width='4'/%3E%3Ccircle cx='50' cy='50' r='4.5' fill='%23d7dde7'/%3E%3C/svg%3E">
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23fff' stroke='%23313131' stroke-width='2.4'/%3E%3Cpath d='M2 16a14 14 0 0 1 28 0z' fill='%23f79429'/%3E%3Cpath d='M2 16h28' stroke='%23313131' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='4.6' fill='%23fff' stroke='%23313131' stroke-width='2.4'/%3E%3C/svg%3E">
 </head>
 <body>
 
-<!-- fondo animado (solo Home) -->
+<!-- fondo animado (solo Home): Pokémon cayendo -->
 <div class="fall-bg" id="fall-bg" aria-hidden="true"></div>
 
 <!-- ============ NAVBAR ============ -->
 <nav class="navbar">
   <a class="brand" href="#/home" data-nav="home" aria-label="Inicio">
-    <svg class="pokeball" viewBox="0 0 100 100" width="30" height="30" aria-hidden="true">
-      <defs>
-        <radialGradient id="pb-top" cx="35%" cy="30%" r="80%">
-          <stop offset="0%" stop-color="#ff7b7b"/><stop offset="55%" stop-color="#e63946"/><stop offset="100%" stop-color="#a51e2b"/>
-        </radialGradient>
-        <radialGradient id="pb-bot" cx="35%" cy="70%" r="80%">
-          <stop offset="0%" stop-color="#ffffff"/><stop offset="70%" stop-color="#e8ecf2"/><stop offset="100%" stop-color="#bfc9d6"/>
-        </radialGradient>
-      </defs>
-      <circle cx="50" cy="50" r="45" fill="url(#pb-bot)"/>
-      <path d="M5 50a45 45 0 0 1 90 0z" fill="url(#pb-top)"/>
-      <ellipse cx="34" cy="26" rx="14" ry="8" fill="rgba(255,255,255,.5)" transform="rotate(-24 34 26)"/>
-      <circle cx="50" cy="50" r="45" fill="none" stroke="#2d3748" stroke-width="7"/>
-      <rect x="5" y="46.5" width="90" height="7" fill="#2d3748"/>
-      <circle cx="50" cy="50" r="17" fill="#2d3748"/>
-      <circle cx="50" cy="50" r="12" fill="#fff"/>
-      <circle cx="50" cy="50" r="12" fill="none" stroke="#2d3748" stroke-width="4"/>
-      <circle cx="50" cy="50" r="4.5" fill="#d7dde7"/>
-    </svg>
+    <img class="pokeball" id="brand-ball" alt="" width="30" height="30" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
     <span class="brand-name">Quetzal <b>Editor</b></span>
   </a>
 
@@ -49,7 +33,7 @@
 
   <div class="nav-actions">
     <span class="save-dot" id="nav-status" title="Sin archivo cargado"></span>
-    <button class="icon-btn" id="btn-theme" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+    <button class="icon-btn theme-btn" id="btn-theme" type="button" title="Cambiar tema" aria-label="Cambiar tema"><img id="theme-img" alt="" width="48" height="48"></button>
     <button class="icon-btn burger" id="btn-burger" aria-label="Abrir menú" aria-expanded="false">
       <svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
     </button>
@@ -61,22 +45,23 @@
 <aside class="drawer" id="drawer" aria-label="Menú">
   <div class="drawer-head">
     <span class="brand-name">Menú</span>
-    <button class="icon-btn" id="btn-close-drawer" aria-label="Cerrar menú">✕</button>
+    <button class="icon-btn" id="btn-close-drawer" aria-label="Cerrar menú">X</button>
   </div>
-  <a href="#/home" data-nav="home">🏠 Inicio</a>
-  <a href="#/entrenador" data-nav="entrenador">👤 Entrenador</a>
-  <a href="#/equipo" data-nav="equipo">⚔️ Equipo</a>
-  <a href="#/pc" data-nav="pc">💻 PC Boxes</a>
+  <a href="#/home" data-nav="home">Inicio</a>
+  <a href="#/entrenador" data-nav="entrenador">Entrenador</a>
+  <a href="#/equipo" data-nav="equipo">Equipo</a>
+  <a href="#/pc" data-nav="pc">PC Boxes</a>
 </aside>
 
 <!-- toast -->
 <div class="toast" id="toast" role="status"></div>
 
-<!-- ============ HOME ============ -->
+<!-- ============ HOME (hero abierto sobre el fondo de Pokémon cayendo) ============ -->
 <main class="page" id="page-home">
-  <section class="hero card">
-    <h1>Editor de <em>equipos</em> para<br>Pokémon <span class="hl">Quetzal</span></h1>
-    <p class="lead">Carga tu archivo <code>.sav</code> (Alpha 9) y edita tu equipo, dinero y medallas.
+  <section class="hero">
+    <p class="hero-kicker">Pokémon Quetzal · Alpha 9</p>
+    <h1>Editor de <em>equipos</em><br>para Pokémon <span class="hl">Quetzal</span></h1>
+    <p class="lead">Carga tu archivo <code>.sav</code> y edita tu equipo, dinero y medallas.
     Todo ocurre <strong>en tu navegador</strong>: el archivo no se sube a ningún servidor y la
     exportación crea una copia nueva con los checksums recalculados.</p>
 
@@ -96,14 +81,22 @@
       <a class="btn btn-outline" href="#/pc">Ver PC</a>
     </div>
 
+    <ul class="hero-feats" aria-label="Ventajas">
+      <li>100 % local</li>
+      <li>16/16 checksums</li>
+      <li>Nombres en español</li>
+      <li>PC incluido</li>
+    </ul>
+
     <details class="fine-print">
       <summary>Cómo funciona (transparencia técnica)</summary>
       <p>Lee las 16 secciones del slot activo (firma 0x08012025), identifica cada sección por su ID
       en 0xFF4 — nunca por posición física — y valida el checksum de cada una (suma u32 LE plegada
-      a 16 bits). El PC se muestra en solo lectura mientras su formato esté ambiguo (38 vs 31 bytes).
-      Al exportar se recomponen las secciones editadas, se recalcula su checksum y se descarga
-      <code>&lt;nombre&gt;_editado.sav</code>; el original nunca se toca. Los nombres de objetos y
-      movimientos se muestran en español; los sprites de Pokémon provienen de PokeAPI.</p>
+      a 16 bits). El PC es editable cuando el formato de registro queda identificado sin ambigüedad
+      (38 B en los saves en español); si es ambiguo, se muestra en solo lectura. Al exportar se
+      recomponen las secciones editadas (equipo, dinero, medallas y PC), se recalculan sus checksums
+      y se descarga <code>&lt;nombre&gt;_editado.sav</code>; el original nunca se toca. Los nombres de
+      objetos y movimientos se muestran en español; los sprites de Pokémon provienen de PokeAPI.</p>
     </details>
   </section>
 </main>
@@ -111,8 +104,11 @@
 <!-- ============ ENTRENADOR ============ -->
 <main class="page" id="page-entrenador" hidden>
   <header class="page-head">
-    <h1>Entrenador</h1>
-    <button class="btn btn-primary" id="btn-export" disabled>💾 Exportar .sav editado</button>
+    <div>
+      <span class="page-kicker">Datos de entrenador</span>
+      <h1>Entrenador</h1>
+    </div>
+    <button class="btn btn-primary" id="btn-export" disabled>Exportar .sav editado</button>
   </header>
 
   <section class="card" id="trainer-card">
@@ -123,8 +119,14 @@
 <!-- ============ EQUIPO ============ -->
 <main class="page" id="page-equipo" hidden>
   <header class="page-head">
-    <h1>Equipo <span class="count-pill" id="party-count">0/6</span></h1>
-    <button class="btn btn-outline" id="btn-add" disabled>➕ Añadir Pokémon</button>
+    <div>
+      <span class="page-kicker">Tu equipo</span>
+      <h1>Equipo <span class="count-pill" id="party-count">0/6</span></h1>
+    </div>
+    <div class="head-tools">
+      <button class="btn btn-outline" id="btn-txt" disabled title="Pegar uno o más Pokémon en formato texto (tipo Showdown)">Equipo desde texto</button>
+      <button class="btn btn-outline" id="btn-add" disabled>Añadir Pokémon</button>
+    </div>
   </header>
 
   <div class="party-grid" id="party-grid">
@@ -138,7 +140,10 @@
 <!-- ============ PC ============ -->
 <main class="page" id="page-pc" hidden>
   <header class="page-head">
-    <h1>PC Boxes</h1>
+    <div>
+      <span class="page-kicker">Almacenamiento</span>
+      <h1>PC Boxes</h1>
+    </div>
     <div class="head-tools">
       <select class="select" id="pc-box-sel" aria-label="Caja"></select>
       <span class="badge-warn" id="pc-badge">Solo lectura</span>
@@ -152,9 +157,10 @@
     <p class="pc-meta" id="pc-meta"></p>
   </section>
 
-  <p class="page-footnote">El PC está en solo lectura: el formato de sus registros es ambiguo en los
-  saves reales (38 vs 31 bytes por registro) y escribir con el supuesto equivocado corrompería las
-  cajas (doc/02 §7). Se muestra la interpretación más probable.</p>
+  <p class="page-footnote">Toca un Pokémon para editarlo, un hueco «+» para crear uno nuevo y
+  «Liberar hueco» para borrar. La edición se activa solo cuando el formato de registro queda
+  identificado sin ambigüedad (38 B en los saves ES); con formato ambiguo el PC queda en solo
+  lectura para no corromper las cajas. Los cambios se escriben al exportar.</p>
 </main>
 
 <!-- ============ MODAL DE EDICIÓN ============ -->
@@ -170,7 +176,7 @@
           <div class="type-row" id="m-types"></div>
         </div>
       </div>
-      <button class="icon-btn" id="m-close" aria-label="Cerrar">✕</button>
+      <button class="icon-btn" id="m-close" aria-label="Cerrar">X</button>
     </header>
 
     <div class="modal-body">
@@ -192,7 +198,8 @@
           </div>
           <label class="field"><span>Poké Ball</span><select class="select" id="f-ball"></select></label>
           <label class="field"><span>Amistad</span><input class="input" id="f-friendship" type="number" min="0" max="255"></label>
-          <label class="field check-field"><span>Shiny</span><input type="checkbox" id="f-shiny"></label>
+          <label class="field" id="fld-qty" hidden><span>Cantidad a crear <small>(huecos libres)</small></span><input class="input" id="f-qty" type="number" min="1" max="6" value="1"></label>
+          <label class="field check-field"><span>Shiny <small>(variocolor)</small></span><input type="checkbox" id="f-shiny"></label>
         </div>
       </section>
 
@@ -241,10 +248,98 @@
     </div>
 
     <footer class="modal-foot">
-      <button class="btn btn-danger-ghost" id="m-delete">🗑 Eliminar</button>
+      <button class="btn btn-danger-ghost" id="m-delete">Eliminar</button>
       <div class="foot-right">
-        <button class="btn btn-outline" id="m-box" disabled title="El PC es de solo lectura (formato ambiguo, doc/02 §7)">📦 Enviar a Caja</button>
-        <button class="btn btn-primary" id="m-save">✔ Guardar</button>
+        <button class="btn btn-primary" id="m-save">Guardar</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ MODAL DE EDICIÓN DEL PC ============ -->
+<div class="modal" id="pcmodal" role="dialog" aria-modal="true" aria-labelledby="pcm-title">
+  <div class="modal-card">
+    <header class="modal-head">
+      <div class="modal-id">
+        <div class="sprite-wrap" id="pcm-sprite-wrap">
+          <img id="pcm-sprite" alt="Sprite del Pokémon">
+        </div>
+        <div>
+          <h2 id="pcm-title">—</h2>
+          <div class="type-row" id="pcm-types"></div>
+        </div>
+      </div>
+      <button class="icon-btn" id="pcm-close" aria-label="Cerrar">X</button>
+    </header>
+
+    <div class="modal-body">
+      <section class="m-section">
+        <h3>Identidad</h3>
+        <div class="form-grid">
+          <div class="field">
+            <span>Especie</span>
+            <button class="pick-btn" id="pf-species-btn" type="button"></button>
+          </div>
+          <label class="field"><span>Apodo <small>(máx. 10)</small></span><input class="input" id="pf-nickname" maxlength="10"></label>
+          <label class="field"><span>Nivel</span><input class="input" id="pf-level" type="number" min="1" max="100"></label>
+          <label class="field"><span>Naturaleza</span><select class="select" id="pf-nature"></select></label>
+          <label class="field"><span>Habilidad</span><select class="select" id="pf-ability"></select></label>
+          <div class="field">
+            <span>Objeto</span>
+            <button class="pick-btn" id="pf-item-btn" type="button"></button>
+          </div>
+          <label class="field"><span>Poké Ball</span><select class="select" id="pf-ball"></select></label>
+          <label class="field check-field"><span>Shiny <small>(variocolor)</small></span><input type="checkbox" id="pf-shiny"></label>
+          <label class="field check-field"><span>♀ Hembra</span><input type="checkbox" id="pf-female"></label>
+        </div>
+        <p class="hint">El registro del PC no guarda OT, PID completo ni amistad: esos campos solo
+        existen en el equipo. El nivel se guarda como EXP y el género como un único bit ♀/♂.</p>
+      </section>
+
+      <section class="m-section">
+        <h3>Experiencia</h3>
+        <div class="exp-block">
+          <div class="exp-top"><span id="pf-exp-label">Nv. 1</span></div>
+          <div class="exp-bar">
+            <div class="exp-fill" id="pf-exp-fill"></div>
+            <span class="exp-mark" style="left:25%"></span><span class="exp-mark" style="left:50%"></span><span class="exp-mark" style="left:75%"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="m-section">
+        <h3>Estadísticas</h3>
+        <div class="stats-wrap">
+          <div class="table-scroll">
+            <table class="stats-table" id="pf-stats">
+              <thead><tr><th></th><th>HP</th><th>Ataque</th><th>Defensa</th><th>Velocidad</th><th>At. Esp.</th><th>Def. Esp.</th></tr></thead>
+              <tbody>
+                <tr class="row-base"><td>Base</td><td colspan="6">—</td></tr>
+                <tr class="row-iv"><td>IVs <small>(0-31)</small></td></tr>
+                <tr class="row-ev"><td>EVs <small>(0-252)</small></td></tr>
+                <tr class="row-calc"><td>Calculados</td><td colspan="6">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="radar-wrap">
+            <svg id="radar-pc" viewBox="0 0 220 196" width="100%" aria-label="Radar de estadísticas"></svg>
+            <div class="ev-total" id="pf-ev-total">Σ EVs: 0/510</div>
+          </div>
+        </div>
+        <p class="hint" id="pf-pp-note">Al guardar se escriben los PP base de cada movimiento y el
+        HP actual se pone al máximo calculado (el registro del PC guarda EVs en múltiplos de 4).</p>
+      </section>
+
+      <section class="m-section">
+        <h3>Movimientos <span class="h3-note">PP automáticos, no se editan</span></h3>
+        <div class="moves-grid" id="pf-moves"></div>
+      </section>
+    </div>
+
+    <footer class="modal-foot">
+      <button class="btn btn-danger-ghost" id="pcm-delete">Liberar hueco</button>
+      <div class="foot-right">
+        <button class="btn btn-primary" id="pcm-save">Guardar en la caja</button>
       </div>
     </footer>
   </div>
@@ -255,24 +350,46 @@
   <div class="pick-card">
     <header class="pick-head">
       <h3 id="pick-title">Elegir</h3>
-      <button class="icon-btn" id="pick-close" aria-label="Cerrar">✕</button>
+      <button class="icon-btn" id="pick-close" aria-label="Cerrar">X</button>
     </header>
     <div class="pick-search">
       <svg viewBox="0 0 24 24" width="17" height="17" class="pick-ico"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.8-3.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input class="input" id="pick-input" placeholder="Buscar por nombre o número…" autocomplete="off" spellcheck="false">
+      <input class="input" id="pick-input" placeholder="Buscar por nombre o número…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
     </div>
     <div class="pick-body" id="pick-body"></div>
     <footer class="pick-foot" id="pick-foot"></footer>
   </div>
 </div>
 
+<!-- ============ EQUIPO DESDE TEXTO (importar/exportar formato Showdown ampliado) ============ -->
+<div class="pick txtbox" id="txtbox" role="dialog" aria-modal="true" aria-labelledby="txt-title">
+  <div class="pick-card txtbox-card">
+    <header class="pick-head">
+      <h3 id="txt-title">Equipo desde texto</h3>
+      <button class="icon-btn" id="txt-close" aria-label="Cerrar">X</button>
+    </header>
+    <p class="txt-hint">Pega aquí uno o más Pokémon (formato tipo Showdown, en español o inglés).
+    Se añaden hasta llenar los <b id="txt-free">0</b> huecos libres del equipo.</p>
+    <textarea class="input txt-area" id="txt-area" spellcheck="false" autocomplete="off"
+      placeholder="Incineroar @ Zidra Berry&#10;Habilidad: Intimidación&#10;Nivel: 100&#10;Fuerte Nature&#10;EVs: 252 HP / 4 Ataque / 252 Def. Esp.&#10;- Finta&#10;- Desquite&#10;- Envite Ígneo&#10;- Protección&#10;&#10;(también vale en inglés: Ability / Level / EVs: 252 HP / moves…)"></textarea>
+    <div class="txt-actions">
+      <button class="btn btn-primary" id="txt-import">Añadir al equipo</button>
+      <button class="btn btn-outline" id="txt-export">Generar del equipo actual</button>
+      <button class="btn btn-danger-ghost" id="txt-clear">Vaciar</button>
+    </div>
+    <div class="txt-log" id="txt-log"></div>
+  </div>
+</div>
+
 <footer class="app-foot">
-  Prototipo fase 2 · corpus <code>quetzal-autopsia</code> · sprites: PokeAPI · Tera/Dynamax/modo de juego: no localizados → nunca se tocan
+  Editor no oficial de Pokémon Quetzal Alpha 9 · sprites: PokeAPI · Nombres en español ·
+  Mecánicas ausentes del .sav (Tera/Dynamax): nunca se modifican
 </footer>
 
 <script src="js/data.js"></script>
 <script src="js/names_es.js"></script>
 <script src="js/learnsets.js"></script>
+<script src="js/pixel.js"></script>
 <script src="js/sav.js"></script>
 <script src="js/editor.js"></script>
 </body>
