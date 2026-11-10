@@ -133,8 +133,10 @@
     <div class="empty-note">Carga un archivo .sav en Inicio para ver tu equipo.</div>
   </div>
 
-  <p class="page-footnote">Toca una tarjeta para editar. Los PP no se editan: al asignar un movimiento
-  se escriben sus PP base automáticamente. Las ediciones se aplican al exportar.</p>
+  <p class="page-footnote">Toca una tarjeta para editarla y <b>arrastra su asa ⠿</b> (esquina superior derecha)
+  para reordenar el equipo: la posición en el equipo es la que el juego usa en los combates.
+  El botón «→ PC» envía ese Pokémon a la caja actual del PC. Los PP no se editan: al asignar
+  un movimiento se escriben sus PP base automáticamente. Las ediciones se aplican al exportar.</p>
 </main>
 
 <!-- ============ PC ============ -->
@@ -157,10 +159,11 @@
     <p class="pc-meta" id="pc-meta"></p>
   </section>
 
-  <p class="page-footnote">Toca un Pokémon para editarlo, un hueco «+» para crear uno nuevo y
-  «Liberar hueco» para borrar. La edición se activa solo cuando el formato de registro queda
-  identificado sin ambigüedad (38 B en los saves ES); con formato ambiguo el PC queda en solo
-  lectura para no corromper las cajas. Los cambios se escriben al exportar.</p>
+  <p class="page-footnote">Toca un Pokémon para editarlo, un hueco «+» para crear uno nuevo,
+  «Retirar al equipo» para llevártelo al equipo (si hay hueco) y «Liberar hueco» para borrar.
+  La edición se activa solo cuando el formato de registro queda identificado sin ambigüedad
+  (38 B en los saves ES); con formato ambiguo el PC queda en solo lectura para no corromper
+  las cajas. Los cambios se escriben al exportar.</p>
 </main>
 
 <!-- ============ MODAL DE EDICIÓN ============ -->
@@ -337,7 +340,10 @@
     </div>
 
     <footer class="modal-foot">
-      <button class="btn btn-danger-ghost" id="pcm-delete">Liberar hueco</button>
+      <div class="foot-left">
+        <button class="btn btn-danger-ghost" id="pcm-delete">Liberar hueco</button>
+        <button class="btn btn-outline" id="pcm-withdraw">Retirar al equipo</button>
+      </div>
       <div class="foot-right">
         <button class="btn btn-primary" id="pcm-save">Guardar en la caja</button>
       </div>

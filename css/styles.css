@@ -321,8 +321,34 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent);
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg);
   padding: 16px; cursor: pointer; color: var(--text); font-family: inherit;
   transition: border-color .15s, background .15s;
+  position: relative;
 }
 .p-card:hover { border-color: var(--accent); background: var(--surface); }
+/* asa de arrastre para reordenar el equipo */
+.p-card .grip {
+  position: absolute; top: 7px; right: 7px; width: 27px; height: 27px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; color: var(--faint); cursor: grab; touch-action: none;
+  transition: background .15s, color .15s;
+}
+.p-card .grip:hover { background: var(--accent-soft); color: var(--text); }
+.p-card .grip:active { cursor: grabbing; }
+.p-card.dragging {
+  opacity: .95; z-index: 6; pointer-events: none;
+  border-color: var(--accent); background: var(--panel);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .25);
+  transition: none; will-change: transform;
+}
+.party-grid.drag-active { user-select: none; }
+/* botón «→ PC» de la tarjeta (enviar a la caja) */
+.card-act {
+  position: absolute; bottom: 9px; right: 9px; border: 1px solid var(--line-strong);
+  background: var(--panel); color: var(--muted); font: inherit; font-size: 11.5px; font-weight: 700;
+  padding: 4px 11px; border-radius: 999px; cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.card-act:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
+.p-card .p-item-line { padding-right: 62px; }
 .sprite-wrap {
   width: 84px; height: 84px; flex: none; display: flex; align-items: center; justify-content: center;
   background: var(--surface); border-radius: 16px;
@@ -441,6 +467,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent);
 .ev-total.bad { color: var(--bad); }
 
 .modal-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--surface); }
+.foot-left { display: flex; gap: 8px; flex-wrap: wrap; }
 .foot-right { display: flex; gap: 8px; margin-left: auto; }
 
 /* ---------- buscador ---------- */

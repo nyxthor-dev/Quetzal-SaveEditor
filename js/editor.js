@@ -38,7 +38,7 @@ const mvName = (id) => (QZ.movesES && QZ.movesES[id - 1]) || (QZ.moves[id - 1] ?
 const mvNameEn = (id) => (QZ.movesEN && QZ.movesEN[id - 1]) || (QZ.moves[id - 1] ? QZ.moves[id - 1][0] : '');
 const itName = (id) => (id === 0 ? '(ninguno)' : (QZ.itemsES && QZ.itemsES[id - 1]) || QZ.items[id - 1] || `Objeto ${id}`);
 const itNameEn = (id) => (id === 0 ? '(ninguno)' : (QZ.items[id - 1] || itName(id)));
-const abName = (id) => (QZ.abilities[id] || `Habilidad ${id}`);
+const abName = (id) => (QZ.abilitiesES && QZ.abilitiesES[id]) || QZ.abilities[id] || `Habilidad ${id}`;
 /* naturalezas: nombres oficiales en español (la tabla interna solo guarda el
    índice estándar de Gen 3; QZ.natures[n][1..2] = sube/baja stat, [0] = nombre EN) */
 const NATURES_ES = ['Fuerte', 'Huraña', 'Audaz', 'Firme', 'Pícara', 'Osada', 'Dócil', 'Plácida',
@@ -371,8 +371,8 @@ function onLoad(bytes, name) {
   $('btn-add').disabled = false;
   $('btn-txt').disabled = false;
   renderTrainer();
+  renderPc();      // antes que renderParty: detecta si el PC es editable (activa el botón «→ PC» de las tarjetas)
   renderParty();
-  renderPc();
   toast('Partida cargada correctamente');
   navigateTo('entrenador');
 }
@@ -435,8 +435,18 @@ function renderParty() {
     : '';
   $('party-grid').innerHTML = cards + addCard;
 
-  document.querySelectorAll('.p-card[data-i]').forEach(el =>
-    el.addEventListener('click', () => openModal(Number(el.dataset.i))));
+  document.querySelectorAll('.p-card[data-i]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.grip') || e.target.closest('[data-dep]') || PartyDrag.suppress) return;
+      openModal(Number(el.dataset.i));
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target === el && !PartyDrag.suppress) openModal(Number(el.dataset.i));
+    });
+  });
+  document.querySelectorAll('[data-dep]').forEach(btn =>
+    btn.addEventListener('click', (e) => { e.stopPropagation(); depositToBox(Number(btn.dataset.dep)); }));
+  attachPartyDrag();
   const addBtn = $('btn-add-slot');
   if (addBtn) addBtn.addEventListener('click', () => openModal(-1));
 }
@@ -447,8 +457,14 @@ function partyCardHtml(i) {
     return `<button class="p-card add-card" data-i="${i}"><span class="plus">+</span><span>Slot vacío — toca para añadir</span></button>`;
   }
   const sp = QZ.species[m.species - 1];
+  const dep = S.pcEditable
+    ? `<button class="card-act" type="button" data-dep="${i}" title="Enviar a la caja del PC">→ PC</button>`
+    : '';
   return `
-  <button class="p-card" data-i="${i}">
+  <div class="p-card" data-i="${i}" role="button" tabindex="0">
+    <span class="grip" data-grip title="Arrastra para cambiar el orden del equipo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="15" height="15"><path d="M9 4h2.4v2.4H9zM12.6 4H15v2.4h-2.4zM9 10.8h2.4v2.4H9zM12.6 10.8H15v2.4h-2.4zM9 17.6h2.4V20H9zM12.6 17.6H15V20h-2.4z" fill="currentColor"/></svg>
+    </span>
     <div class="sprite-wrap">${spriteImg(m.species, m.shiny, spName(m.species))}</div>
     <div class="meta">
       <div class="p-name">${m.shiny ? '<span class="shiny-mark">✦</span>' : ''}
@@ -457,7 +473,134 @@ function partyCardHtml(i) {
       <div class="type-row">${typeChips(sp)}</div>
       <div class="p-item-line">${m.item ? `<span class="item-name">${escapeHtml(itName(m.item))}</span>` : 'sin objeto'} · OT ${escapeHtml(m.ot)}</div>
     </div>
-  </button>`;
+    ${dep}
+  </div>`;
+}
+
+/* ================= enviar del equipo a una caja del PC =================
+   Codifica el registro de 104 B a formato PC (38/31/21 B) con qzEncodePcRecord
+   y lo coloca en el primer hueco libre: caja actual del juego → resto de cajas.
+   El PC no guarda OT, PID completo ni amistad (formato del juego). */
+function depositToBox(i) {
+  if (!S.save || !S.pcEditable) { toastPcRo(); return; }
+  const raw = S.party[i];
+  if (!raw) return;
+  const m = S.save.parsePartyRecord(raw);
+  if (!m.species) { toast('Ese hueco está vacío'); return; }
+  const sp = QZ.species[m.species - 1];
+  const boxes = S.pcFmt.boxes;
+  const start = S.pcCurrent || 0;
+  let target = -1;
+  for (let k = 0; k < boxes && target < 0; k++) {
+    const box = (start + k) % boxes;
+    for (let p = 0; p < QZS.BOX_SLOTS; p++) {
+      if (!pcRecordAt(box * 30 + p)) { target = box * 30 + p; break; }
+    }
+  }
+  if (target < 0) { toast('El PC está lleno: no hay huecos libres en ninguna caja', 4200); return; }
+  const evs = m.evs.map(v => Math.min(252, Math.round(v / 4) * 4)); // el PC guarda EVs en múltiplos de 4
+  const gb = sp ? sp[12] : 255;
+  const female = qzIsFemale(m.pid & 0xFF, gb) === true;
+  const rec = qzEncodePcRecord({
+    species: m.species, item: m.item, exp: m.exp, ball: m.ball,
+    shiny: m.shiny, moves: m.moves, evs, ivs: m.ivs, female,
+    nature: m.nature, abilityNum: m.abilityNum, flags: 0,
+    hpCur: m.hpCur || m.stats[0], pp: m.pp, nickname: m.nickname,
+  }, pcSize());
+  S.pcBuf.set(rec, pcRecOff(target));
+  S.pcDirty = true; S.dirty = true;
+  S.party.splice(i, 1);
+  renderParty();
+  updatePcMeta();
+  if (document.body.dataset.route === 'pc') renderPcBox();
+  const dstBox = Math.floor(target / 30), dstPos = target % 30;
+  toast(`${spName(m.species)} enviado a ${S.pcNames[dstBox] || ('Caja ' + (dstBox + 1))} · hueco ${dstPos + 1} (se escribe al exportar)`, 4000);
+}
+
+/* ================= reordenar el equipo arrastrando =================
+   Cada tarjeta tiene un asa ⠿ (esquina superior derecha). Al arrastrar, la tarjeta
+   sigue al puntero y las demás se apartan con animación FLIP; al soltar se reordena
+   S.party — el orden físico de la sección 1 del .sav, es decir, el orden real de
+   combate que el juego usa. Funciona con ratón y con táctil (pointer events).
+   El botón «→ PC» y el click de edición no se disparan durante el arrastre. */
+const PartyDrag = { suppress: false };
+function attachPartyDrag() {
+  document.querySelectorAll('.p-card[data-i] [data-grip]').forEach(grip => {
+    grip.addEventListener('pointerdown', (e) => startPartyDrag(e, grip), { passive: false });
+  });
+}
+function startPartyDrag(e, grip) {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const card = grip.closest('.p-card[data-i]');
+  const grid = $('party-grid');
+  if (!card || !S.save) return;
+  e.preventDefault();
+  e.stopPropagation();
+  try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+  const r0 = card.getBoundingClientRect();
+  const offX = e.clientX - r0.left, offY = e.clientY - r0.top;
+  let moved = false;
+  card.classList.add('dragging');
+  grid.classList.add('drag-active');
+
+  const others = () => [...grid.querySelectorAll('.p-card[data-i]')].filter(c => c !== card);
+  function flipMove(mutate) { // anima a los demás al apartarse
+    const sibs = others();
+    const first = new Map(sibs.map(el => [el, el.getBoundingClientRect()]));
+    mutate();
+    sibs.forEach(el => {
+      const a = first.get(el), b = el.getBoundingClientRect();
+      const dx = a.left - b.left, dy = a.top - b.top;
+      if (!dx && !dy) return;
+      el.style.transition = 'none';
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform .18s ease';
+        el.style.transform = '';
+        setTimeout(() => { el.style.transition = ''; }, 200);
+      });
+    });
+  }
+  const onMove = (ev) => {
+    moved = true;
+    card.style.transform = `translate(${ev.clientX - offX - r0.left}px, ${ev.clientY - offY - r0.top}px)`;
+    const rest = others();
+    let before = null;
+    for (const c of rest) {
+      const r = c.getBoundingClientRect();
+      if (ev.clientY < r.top + r.height / 2) { before = c; break; }
+    }
+    const isBefore = before && before.previousElementSibling === card;
+    const atEnd = !before;
+    const addCard = $('btn-add-slot');
+    if (isBefore || (atEnd && (!addCard || addCard.previousElementSibling === card))) return;
+    flipMove(() => {
+      if (before) grid.insertBefore(card, before);
+      else if (addCard) grid.insertBefore(card, addCard);
+      else grid.appendChild(card);
+    });
+  };
+  const onUp = () => {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointercancel', onUp);
+    window.removeEventListener('pointerup', onUp);
+    card.classList.remove('dragging');
+    card.style.transform = '';
+    grid.classList.remove('drag-active');
+    if (!moved || !S.save) return;
+    PartyDrag.suppress = true;          // evita abrir el editor con el click de soltar
+    setTimeout(() => { PartyDrag.suppress = false; }, 150);
+    const order = [...grid.querySelectorAll('.p-card[data-i]')].map(el => Number(el.dataset.i));
+    if (order.some((v, k) => v !== k)) {
+      S.party = order.map(i => S.party[i]);
+      S.dirty = true;
+      renderParty();
+      toast('Orden del equipo actualizado (se guarda al exportar)');
+    }
+  };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onUp);
 }
 
 /* ================= PC (editable si el formato no es ambiguo) ================= */
@@ -563,6 +706,8 @@ function openPcEditor(box, p) {
   $('pcm-delete').disabled = P.creating;
   $('pcm-delete').classList.remove('armed');
   $('pcm-delete').textContent = 'Liberar hueco';
+  $('pcm-withdraw').hidden = P.creating || S.party.length >= 6;
+  $('pcm-withdraw').title = S.party.length >= 6 ? 'El equipo está lleno (6/6)' : 'Copia este Pokémon al equipo y libera el hueco del PC';
   const tbody = $('pf-stats').tBodies[0];
   tbody.querySelector('.row-base').innerHTML = `<td>Base</td>` + pcBaseHtml(P.spId);
   tbody.querySelector('.row-iv').innerHTML = `<td>IVs <small>(0-31)</small></td>` + [0, 1, 2, 3, 4, 5].map(k =>
@@ -698,6 +843,51 @@ $('pcm-delete').addEventListener('click', () => {
   closePcModal();
   toast(`Hueco ${P.pos + 1} de ${S.pcNames[P.box]} liberado (se escribe al exportar)`);
 });
+
+/* ================= retirar de la caja al equipo =================
+   Reconstruye un registro de 104 B desde el registro PC (38/31/21 B): especie,
+   objeto, EXP→nivel, ball, shiny, movimientos (+PP base), IVs, EVs, género,
+   naturaleza (byte bajo del PID coherente), habilidad y stats recalculados.
+   El OT se clona de un miembro del equipo (o del entrenador si está vacío) y el
+   PID alto se genera aleatorio — campos que el formato PC no guarda. */
+function withdrawToParty() {
+  if (!S.pcEditable) { toastPcRo(); return; }
+  if (S.party.length >= 6) { toast('El equipo está lleno (6/6): libera un hueco antes de retirar', 4000); return; }
+  const m = pcRecordAt(P.box * 30 + P.pos);
+  if (!m || !m.species) return;
+  const raw = newRecordBase();
+  if (!raw) return;
+  const spId = m.species;
+  const sp = QZ.species[spId - 1];
+  const level = Math.max(1, Math.min(100, qzLevelForExp(m.exp)));
+  // naturaleza + género coherentes reescribiendo el byte bajo del PID
+  const gb = sp ? sp[12] : 255;
+  let pidLow = m.nature || 0;
+  if (gb !== 255 && gb !== 0 && gb !== 254) {
+    for (let b = m.nature || 0; b < 256; b += 25) {
+      if (qzIsFemale(b, gb) === m.female) { pidLow = b; break; }
+    }
+  }
+  const ivs = m.ivs.slice();
+  const evs = m.evs.slice();
+  const base = sp ? [sp[3], sp[4], sp[5], sp[6], sp[7], sp[8]] : [50, 50, 50, 50, 50, 50];
+  const stats = qzCalcStats(base, level, ivs, evs, m.nature || 0);
+  const hi = (Math.random() * 0x1000000) >>> 0;
+  writeMonData(raw, {
+    spId, nick: (m.nickname || spName(spId)).slice(0, 10),
+    level, pid: (((hi << 8) >>> 0) | pidLow) >>> 0,
+    shiny: m.shiny, abilityNum: m.abilityNum || 0,
+    item: m.item || 0, ball: m.ball || 0, friendship: 70,
+    ivs, evs, moves: m.moves.slice(), stats,
+  });
+  S.party.push(raw);
+  S.pcBuf.fill(0, pcRecOff(P.box * 30 + P.pos), pcRecOff(P.box * 30 + P.pos) + pcSize());
+  S.pcDirty = true; S.dirty = true;
+  renderPcBox(); updatePcMeta(); renderParty();
+  closePcModal();
+  toast(`${spName(spId)} retirado al equipo (posición ${S.party.length}) · se escribe al exportar`, 4000);
+}
+$('pcm-withdraw').addEventListener('click', withdrawToParty);
 
 /* pickers del PC (reutilizan la ventana genérica con el estado P) */
 $('pf-species-btn').addEventListener('click', () => {
@@ -1567,6 +1757,9 @@ function buildLookups() {
   if (QZ.itemsES) QZ.itemsES.forEach((n, i) => { if (n && i >= 0) addObjetoKeys(items, n, i + 1); });
   Object.entries(QZ.abilities).forEach(([id, n]) => { if (n) abil[tokKey(n)] = Number(id); });
   if (QZ.abilitiesEN) Object.entries(QZ.abilitiesEN).forEach(([id, n]) => { if (n) abil[tokKey(n)] = Number(id); });
+  /* nombres oficiales ES (names_es.js: veekun + PokeAPI gen 9) — el importador
+     acepta «Intimidación», «Piel Tosca», «General Supremo», … */
+  if (QZ.abilitiesES) Object.entries(QZ.abilitiesES).forEach(([id, n]) => { if (n && abil[tokKey(n)] == null) abil[tokKey(n)] = Number(id); });
   /* alias coloquiales frecuentes que la ROM no usa (el juego dice «Gafas
      Elección» / «Potencia», la gente escribe «Gafas Elegidas» / «Potencia Firme») */
   [['gafaselegidas', 'gafaseleccion'], ['gafasespeciales', 'gafaseleccion'],
